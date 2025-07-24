@@ -91,24 +91,36 @@ class QAService:
         print("--------------------")
         
         # 解析LLM返回的JSON字符串
+        import json
         try:
-            json_str = raw_response.strip().removeprefix("```json").removesuffix("```")
-            
-            # 增强清洗逻辑：同时处理qwen-turbo可能生成的`\%`和`\\%`两种非法转义
-            cleaned_json_str = json_str.replace('\\\\%', '%').replace('\\%', '%')
-            
-            parsed_response = json.loads(cleaned_json_str)
-            parsed_response['raw_context'] = documents
-            return parsed_response
-        except (json.JSONDecodeError, AttributeError) as e:
+            decoder = json.JSONDecoder()
+            s = raw_response.lstrip()
+            found = []
+            i = 0
+            while i < len(s):
+                try:
+                    obj, idx = decoder.raw_decode(s[i:])
+                    if isinstance(obj, dict):
+                        found.append(obj)
+                    i += idx
+                except Exception:
+                    i += 1
+            if len(found) >= 2:
+                found[1]['raw_context'] = documents
+                return found[1]
+            elif len(found) == 1:
+                found[0]['raw_context'] = documents
+                return found[0]
+            else:
+                raise ValueError("未能提取到合法的JSON对象")
+        except Exception as e:
             print(f"错误: 解析LLM返回的JSON失败 - {e}")
-            # 返回一个错误结构，以便前端可以优雅地处理
             return {
                 "reasoning_steps": ["无法解析模型的响应。"],
                 "reasoning_summary": "模型返回的格式不正确，请稍后重试。",
                 "relevant_context": raw_response, # 返回原始响应以便调试
                 "final_answer": "抱歉，处理您的请求时发生错误。",
-                "raw_context": documents
+                "raw_context": doc_contents
             }
 
     def ask(self, query: str, top_k: int = 20, rerank_top_n: int = 5) -> Dict:
@@ -122,20 +134,63 @@ class QAService:
                         更丰富的候选集，并最终为LLM提供更全面的上下文，
                         以提升复杂问题的分析和生成质量。
         """
-        print(f"\n--- 接收到问题: {query} ---")
+        print(f"\n--- 接收到问题: {query} \n---")
         final_docs = self.search_documents(query, top_k, rerank_top_n)
         
         if not final_docs:
             return {
                 "reasoning_steps": [],
                 "reasoning_summary": "未能找到相关文档。",
-                "relevant_context": "",
+                "relevant_context": [],
                 "final_answer": "抱歉，我在知识库中没有找到与您问题相关的信息。",
                 "raw_context": []
             }
         
         answer = self.generate_answer(query, final_docs)
         return answer
+
+    def batch_audit(self, contents: list, top_k: int = 5, rerank_top_n: int = 2) -> list:
+        """
+        批量审核：每个content如超长则切分为多段，对每段分别检索，合并所有检索结果后，
+        用完整content和合并后的检索文档只做一次RAG。
+        """
+        MAX_EMBEDDING_LENGTH = 2048
+
+        def split_content(content):
+            return [content[i:i+MAX_EMBEDDING_LENGTH] for i in range(0, len(content), MAX_EMBEDDING_LENGTH)]
+
+        results = []
+        for content in contents:
+            if not content or not isinstance(content, str) or not content.strip():
+                results.append({"error": "内容为空或读取失败"})
+                continue
+            segments = [seg for seg in split_content(content) if seg and seg.strip()]
+            if not segments:
+                results.append({"error": "内容切分后为空"})
+                continue
+            # 对每个分段分别检索
+            all_docs = []
+            for seg in segments:
+                try:
+                    docs = self.search_documents(seg, top_k=top_k, rerank_top_n=rerank_top_n)
+                    all_docs.extend(docs)
+                except Exception as e:
+                    continue
+            # 合并检索结果（按page_content去重）
+            seen = set()
+            merged_docs = []
+            for doc in all_docs:
+                key = doc["page_content"]
+                if key not in seen:
+                    merged_docs.append(doc)
+                    seen.add(key)
+            # 用完整content和合并后的检索文档只做一次RAG
+            try:
+                answer = self.generate_answer(content, merged_docs)
+                results.append(answer)
+            except Exception as e:
+                results.append({"error": f"审核异常: {str(e)}"})
+        return results
 
 def run_batch_mode(qa_service: QAService):
     """

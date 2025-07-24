@@ -1,0 +1,26 @@
+[
+  {
+    "file_name": "【光大证券】中芯国际2025年一季度业绩点评：1Q突发生产问题，2Q业绩有望筑底，自主可控趋势不改.pdf",
+    "raw_content": " \n \n敬请参阅最后一页特别声明 \n-1- \n证券研究报告 \n \n2025 年5 月11 日 \n公司研究 \n1Q 突发生产问题，2Q 业绩有望筑底，自主可控趋势不改 \n——中芯国际（0981.HK+688981.SH）2025 年一季度业绩点评 \nA 股：买入（维持） \n事件：生产问题导致25Q1营收和25Q2指引不及预期，25Q1毛利率超预期。\n1Q25收入22.47亿美元，同比增长28.4%，",
+    "result": [
+      {
+        "error": "审核异常: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument index in method wrapper_CUDA__index_select)"
+      },
+      {
+        "error": "审核异常: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument index in method wrapper_CUDA__index_select)"
+      },
+      {
+        "error": "审核异常: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument index in method wrapper_CUDA__index_select)"
+      },
+      {
+        "error": "审核异常: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument index in method wrapper_CUDA__index_select)"
+      },
+      {
+        "error": "审核异常: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument index in method wrapper_CUDA__index_select)"
+      },
+      {
+        "error": "审核异常: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument index in method wrapper_CUDA__index_select)"
+      }
+    ]
+  }
+]

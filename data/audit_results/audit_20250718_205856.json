@@ -1,0 +1,55 @@
+[
+  {
+    "file_name": "temp_temp_2.txt",
+    "raw_content": "苏州档案\n为深入贯彻落实《中华人民共和国档案法》《国家档案馆档案开放办法》，全面提升档案开放审核工作的科学化、规范化水平，2025年5月15日，苏州市档案局、苏州市档案馆正式印发《苏州市档案开放审核实施细则（试行）》。《细则》旨在科学把握“三个走向”的丰富内涵和实践要求，着力破解开放审核中的职责交叉、流程模糊、管控不明等难点，为档案安全有序开放提供制度保障。\n\n《细则》立足苏州工作实际，力求突破传",
+    "result": [
+      {
+        "step_number": 1,
+        "description": "确认苏州档案的相关背景。",
+        "analysis": "苏州档案是在遵守《中华人民共和国档案法》及相关规定的前提下制定了一份名为《苏州市档案开放审核实施细则（试行）》的新政。新政明确了各方责任划分、优化了审核程序，并提出了智能化解决方案等内容。",
+        "raw_context": [
+          {
+            "page_content": "第十四条 县级以上地方档案主管部门应当协调建立本地区馆藏档案开放审核协同机制，明确国家档案馆牵头，档案形成单位或者移交单位参与，双方共同负责馆藏档案开放审核。",
+            "metadata": {
+              "source": "D:\\Deskotp\\test\\RAG-Company-Wayman\\data\\processed_reports\\国家档案馆档案开放办法.json",
+              "seq_num": 30,
+              "score": 1593.0035400390625
+            }
+          },
+          {
+            "page_content": "第十二条 国家档案馆的档案应当依照有关法律、行政法规以及本办法的规定，进行开放审核，分期分批向社会开放。",
+            "metadata": {
+              "seq_num": 23,
+              "source": "D:\\Deskotp\\test\\RAG-Company-Wayman\\data\\processed_reports\\国家档案馆档案开放办法.json",
+              "score": 1943.1044921875
+            }
+          },
+          {
+            "page_content": "第十五条 馆藏档案开放审核结果应当由国家档案馆和档案形成单位或者移交单位协商一致确定。其中，延期向社会开放的档案，应当由国家档案馆将档案目录报同级档案主管部门审核。",
+            "metadata": {
+              "source": "D:\\Deskotp\\test\\RAG-Company-Wayman\\data\\processed_reports\\国家档案馆档案开放办法.json",
+              "seq_num": 32,
+              "score": 1943.5445556640625
+            }
+          },
+          {
+            "page_content": "第九条 国家档案馆应当根据本办法第八条的规定，结合职责权限和馆藏档案实际，会同档案形成单位或者移交单位依法依规确定延期向社会开放档案的具体标准和范围。",
+            "metadata": {
+              "seq_num": 19,
+              "source": "D:\\Deskotp\\test\\RAG-Company-Wayman\\data\\processed_reports\\国家档案馆档案开放办法.json",
+              "score": 1954.333740234375
+            }
+          },
+          {
+            "page_content": "第四条 国家档案馆应当建立健全档案开放工作制度，积极稳妥地推进档案开放，加强档案利用服务能力建设，保障单位和个人依法利用档案的权利。",
+            "metadata": {
+              "source": "D:\\Deskotp\\test\\RAG-Company-Wayman\\data\\processed_reports\\国家档案馆档案开放办法.json",
+              "seq_num": 7,
+              "score": 1973.813720703125
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

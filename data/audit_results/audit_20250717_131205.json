@@ -1,0 +1,32 @@
+[
+  {
+    "file_name": "temp_temp_2.txt",
+    "raw_content": "苏州档案\n为深入贯彻落实《中华人民共和国档案法》《国家档案馆档案开放办法》，全面提升档案开放审核工作的科学化、规范化水平，2025年5月15日，苏州市档案局、苏州市档案馆正式印发《苏州市档案开放审核实施细则（试行）》。《细则》旨在科学把握“三个走向”的丰富内涵和实践要求，着力破解开放审核中的职责交叉、流程模糊、管控不明等难点，为档案安全有序开放提供制度保障。\n\n《细则》立足苏州工作实际，力求突破传",
+    "result": [
+      {
+        "reasoning_steps": "...",
+        "reasoning_summary": "...",
+        "relevant_context": "...",
+        "final_answer": "开放/不开放",
+        "raw_context": [
+          {
+            "page_content": "第十四条 县级以上地方档案主管部门应当协调建立本地区馆藏档案开放审核协同机制，明确国家档案馆牵头，档案形成单位或者移交单位参与，双方共同负责馆藏档案开放审核。",
+            "metadata": {
+              "source": "D:\\Deskotp\\test\\RAG-Company-Wayman\\data\\processed_reports\\国家档案馆档案开放办法.json",
+              "seq_num": 30,
+              "score": 1602.48779296875
+            }
+          },
+          {
+            "page_content": "第十二条 国家档案馆的档案应当依照有关法律、行政法规以及本办法的规定，进行开放审核，分期分批向社会开放。",
+            "metadata": {
+              "source": "D:\\Deskotp\\test\\RAG-Company-Wayman\\data\\processed_reports\\国家档案馆档案开放办法.json",
+              "seq_num": 23,
+              "score": 1951.87548828125
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import axios from 'axios'
-import { App as AntApp, Input, Button, Card, Typography, Space, Spin, Alert, List, Collapse } from 'antd'
-import { RocketOutlined } from '@ant-design/icons'
+import { App as AntApp, Input, Button, Card, Typography, Space, Spin, Alert, List, Collapse, Menu } from 'antd'
+import { RocketOutlined, FileTextOutlined, AuditOutlined, QuestionCircleOutlined, FileProtectOutlined } from '@ant-design/icons'
+import ArchivesPage from './pages/ArchivesPage'
+import RulesPage from './pages/RulesPage'
+import AskPage from './pages/AskPage'
+import AuditPage from './pages/AuditPage'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
@@ -13,6 +17,7 @@ const apiClient = axios.create({
 
 function App() {
   // --- State Management ---
+  const [currentPage, setCurrentPage] = useState('ask')
   const [query, setQuery] = useState('中芯国际的2024年主营业务是多少？')
   const [result, setResult] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -69,6 +74,28 @@ function App() {
 
   return (
     <AntApp>
+      <Menu
+        mode="horizontal"
+        selectedKeys={[currentPage]}
+        onClick={({ key }) => setCurrentPage(key)}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          zIndex: 100,
+          borderBottom: '1px solid #f0f0f0',
+          background: '#fff',
+        }}
+        items={[
+          { key: 'ask', icon: <QuestionCircleOutlined />, label: 'RAG问答' },
+          { key: 'archives', icon: <FileTextOutlined />, label: '档案管理' },
+          { key: 'rules', icon: <FileProtectOutlined />, label: '审核规则管理' },
+          { key: 'audit', icon: <AuditOutlined />, label: '批量审核' },
+        ]}
+      />
+      <div style={{ paddingTop: 48 }}>
+        {currentPage === 'ask' && (
       <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
         <div style={siderStyle}>
           <Title level={5} style={{ fontSize: '14px', fontWeight: 'bold' }}>查询设置</Title>
@@ -96,7 +123,6 @@ function App() {
               基于深度RAG系统 | 支持多年公司年报问答 | 向量检索+LLM整理 | 帮忙点个小星星
             </Paragraph>
           </div>
-          
           <Spin spinning={isLoading} tip="加载中..." size="large" style={{ display: 'block' }}>
             {error && <Alert message={error} type="error" showIcon style={{marginBottom: '15px'}} />}
             {result && (
@@ -134,6 +160,11 @@ function App() {
             )}
           </Spin>
         </div>
+          </div>
+        )}
+        {currentPage === 'archives' && <ArchivesPage />}
+        {currentPage === 'rules' && <RulesPage />}
+        {currentPage === 'audit' && <AuditPage />}
       </div>
     </AntApp>
   )

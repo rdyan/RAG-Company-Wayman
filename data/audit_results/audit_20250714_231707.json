@@ -1,0 +1,32 @@
+[
+  {
+    "file_name": "【兴证国际】季度盈利低于预期，看好国产芯片长期空间.pdf",
+    "raw_content": "海外公司点评报告| 资讯科技业\n证券研究报告\n请阅读最后评级说明和重要声明\n1/5\n公司评级\n增持（维持）\n报告日期\n2025 年05 月12 日\n基础数据\n05 月09 日收盘价（港\n元）\n43.00\n总市值（亿港元）\n3,433.88\n总股本（亿股）\n79.86\n来源：聚源，兴业证券经济与金融研究院整理\n相关研究\n【兴证海外TMT】中芯国际24Q4 点评：\n24Q4 毛利率超指引，25H1 补",
+    "result": [
+      {
+        "error": "审核异常: Expected embeddings to be a list of floats or ints, a list of lists, a numpy array, or a list of numpy arrays, got [None] in query."
+      },
+      {
+        "error": "审核异常: Expected embeddings to be a list of floats or ints, a list of lists, a numpy array, or a list of numpy arrays, got [None] in query."
+      },
+      {
+        "error": "审核异常: Expected embeddings to be a list of floats or ints, a list of lists, a numpy array, or a list of numpy arrays, got [None] in query."
+      },
+      {
+        "error": "审核异常: Expected embeddings to be a list of floats or ints, a list of lists, a numpy array, or a list of numpy arrays, got [None] in query."
+      },
+      {
+        "error": "审核异常: Expected embeddings to be a list of floats or ints, a list of lists, a numpy array, or a list of numpy arrays, got [None] in query."
+      },
+      {
+        "error": "审核异常: Expected embeddings to be a list of floats or ints, a list of lists, a numpy array, or a list of numpy arrays, got [None] in query."
+      },
+      {
+        "error": "审核异常: Expected embeddings to be a list of floats or ints, a list of lists, a numpy array, or a list of numpy arrays, got [None] in query."
+      },
+      {
+        "error": "审核异常: Expected embeddings to be a list of floats or ints, a list of lists, a numpy array, or a list of numpy arrays, got [None] in query."
+      }
+    ]
+  }
+]

@@ -10,24 +10,43 @@
 """
 import os
 import sys
-
+import torch
 # 将项目根目录添加到 sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import dashscope
+from modelscope import AutoModelForCausalLM, AutoTokenizer
+from modelscope.hub.snapshot_download import snapshot_download
 from http import HTTPStatus
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-from config import DASHSCOPE_API_KEY, RERANK_MODEL_NAME, EMBEDDING_MODEL_NAME, GENERATION_MODEL_NAME
+from config import DASHSCOPE_API_KEY, RERANK_MODEL_NAME, EMBEDDING_MODEL_NAME, API_MODEL_NAME, LLM_MODE
+from config import LOCAL_MODEL_PATH
+
+os.environ['MODELSCOPE_CACHE']='.'
 
 class QwenLLM:
-    def __init__(self, api_key=DASHSCOPE_API_KEY):
+    def __init__(self):
         """
-        初始化QwenLLM服务。
+        初始化QwenLLM服务，仅支持API和本地modelscope两种模式。
         """
-        if api_key:
-            dashscope.api_key = api_key
+        if LLM_MODE == "api":
+            if DASHSCOPE_API_KEY:
+                dashscope.api_key = DASHSCOPE_API_KEY
+            else:
+                raise ValueError("通义千问API Key未设置, 请在config.py中配置")
+            self.api_mode = True
+        elif LLM_MODE == "local":
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                LOCAL_MODEL_PATH)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                LOCAL_MODEL_PATH,
+                device_map="auto",
+                load_in_4bit=True,           # 4bit量化加载
+                torch_dtype=torch.float16    # 推荐：节省显存
+            ).eval()
+            self.api_mode = False
         else:
-            raise ValueError("通义千问API Key未设置, 请在config.py中配置")
+            raise ValueError("Unsupported LLM_MODE")
 
     def get_rerank_documents(self, query: str, documents: list[str], top_n: int = 3) -> list[str]:
         """
@@ -116,30 +135,36 @@ class QwenLLM:
     def get_chat_completion(self, prompt: str, system_prompt: str = "You are a helpful assistant."):
         """
         获取大模型的文本生成结果。
-
-        :param prompt: 用户输入或组合后的prompt
-        :param system_prompt: 系统级指令
-        :return: 模型生成的文本内容，或在失败时返回空字符串
         """
-        messages = [
-            {'role': 'system', 'content': system_prompt},
-            {'role': 'user', 'content': prompt}
-        ]
-        try:
-            response = dashscope.Generation.call(
-                model=GENERATION_MODEL_NAME,
-                messages=messages,
-                result_format='message',  # 设置返回格式为message
-            )
-
-            if response.status_code == HTTPStatus.OK:
-                return response.output.choices[0].message.content
-            else:
-                print(f"通义千问Generation API调用失败: {response.code} - {response.message}")
+        if hasattr(self, 'api_mode') and self.api_mode:
+            import dashscope
+            messages = [
+                {'role': 'system', 'content': system_prompt},
+                {'role': 'user', 'content': prompt}
+            ]
+            try:
+                response = dashscope.Generation.call(
+                    model=API_MODEL_NAME,
+                    messages=messages,
+                    result_format='message',
+                )
+                if response.status_code == 200:
+                    return response.output.choices[0].message.content
+                else:
+                    print(f"通义千问Generation API调用失败: {response.code} - {response.message}")
+                    return ""
+            except Exception as e:
+                print(f"调用Generation API时发生异常: {e}")
                 return ""
-        except Exception as e:
-            print(f"调用Generation API时发生异常: {e}")
-            return ""
+        else:
+            inputs = self.tokenizer(prompt, return_tensors="pt").to("cuda")
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=1024,
+                temperature=0.6,
+                repetition_penalty=1.2
+            )
+            return self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 if __name__ == '__main__':
     # 简单测试

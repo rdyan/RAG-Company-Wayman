@@ -1,0 +1,11 @@
+[
+  {
+    "file_name": "temp_temp_2.txt",
+    "raw_content": "苏州档案\n为深入贯彻落实《中华人民共和国档案法》《国家档案馆档案开放办法》，全面提升档案开放审核工作的科学化、规范化水平，2025年5月15日，苏州市档案局、苏州市档案馆正式印发《苏州市档案开放审核实施细则（试行）》。《细则》旨在科学把握“三个走向”的丰富内涵和实践要求，着力破解开放审核中的职责交叉、流程模糊、管控不明等难点，为档案安全有序开放提供制度保障。\n\n《细则》立足苏州工作实际，力求突破传",
+    "result": [
+      {
+        "error": "审核异常: The following `model_kwargs` are not used by the model: ['enable_thinking'] (note: typos in the generate arguments will also show up in this list)"
+      }
+    ]
+  }
+]

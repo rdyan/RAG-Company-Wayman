@@ -14,7 +14,11 @@ from typing import List
 # from langchain_huggingface import HuggingFaceEmbeddings  # 不再使用HuggingFaceEmbeddings
 from core.llm_service import QwenLLM # 导入QwenLLM
 from config import PROCESSED_REPORTS_DIR, VECTOR_STORE_DIR
+from config import EMBEDDING_MODE, LOCAL_EMBEDDING_PATH, VECTOR_STORE_SUBDIR
 from langchain.schema import Document
+from transformers import AutoTokenizer, AutoModel
+import torch
+import numpy as np
 
 class QwenTongyiEmbeddings(Embeddings):
     """
@@ -66,21 +70,61 @@ class QwenTongyiEmbeddings(Embeddings):
         """处理单个查询的向量化"""
         return self.llm_service.get_text_embedding(text)
 
+# === 本地Qwen3-Embedding-0.6B适配 ===
+class LocalQwenEmbedding(Embeddings):
+    """
+    本地 Qwen3-Embedding-0.6B 封装，适配 LangChain Embeddings 接口
+    """
+    def __init__(self, model_path):
+        self.tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-Embedding-0.6B",cache_dir = model_path, trust_remote_code=True)
+        self.model = AutoModel.from_pretrained("Qwen/Qwen3-Embedding-0.6B", cache_dir = model_path, trust_remote_code=True, device_map = "cuda" ).eval()
+        self.torch = torch
+        self.np = np
+
+    def _mean_pooling(self, last_hidden, attention_mask):
+        mask = attention_mask.unsqueeze(-1).expand(last_hidden.size()).float()
+        masked_hidden = last_hidden * mask
+        summed = self.torch.sum(masked_hidden, 1)
+        counts = self.torch.clamp(mask.sum(1), min=1e-9)
+        mean_pooled = summed / counts
+        return mean_pooled
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        embs = []
+        for text in texts:
+            embs.append(self.embed_query(text))
+        return embs
+
+    def embed_query(self, text: str) -> List[float]:
+        inputs = self.tokenizer(text, return_tensors="pt", truncation=True, max_length=32000)
+        # 保证inputs和模型在同一设备
+        inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+        with self.torch.no_grad():
+            outputs = self.model(**inputs)
+            last_hidden = outputs.last_hidden_state
+            pooled = self._mean_pooling(last_hidden, inputs['attention_mask'])
+            emb = pooled.squeeze(0).cpu().numpy().astype(self.np.float32)
+        return emb.tolist()
 
 class KnowledgeBaseManager:
-    def __init__(self, processed_dir: str = PROCESSED_REPORTS_DIR, 
-                 persist_directory: str = VECTOR_STORE_DIR):
+    def __init__(self, processed_dir: str = PROCESSED_REPORTS_DIR, persist_directory: str = None):
         """
         初始化知识库管理器。
 
         :param processed_dir: 已处理（JSON）文件所在的目录。
-        :param persist_directory: ChromaDB持久化存储的目录。
+        :param persist_directory: ChromaDB持久化存储的目录（如为None则自动拼接主目录和子目录）。
         """
         self.processed_dir = processed_dir
-        self.persist_directory = persist_directory
-        # 使用通义千问的Embedding服务,并用包装类适配
-        llm = QwenLLM()
-        self.embedding_function = QwenTongyiEmbeddings(llm)
+        if persist_directory is None:
+            self.persist_directory = os.path.join(VECTOR_STORE_DIR, VECTOR_STORE_SUBDIR)
+        else:
+            self.persist_directory = persist_directory
+        # 根据配置选择本地或远程embedding
+        if EMBEDDING_MODE == "local":
+            self.embedding_function = LocalQwenEmbedding(LOCAL_EMBEDDING_PATH)
+        else:
+            llm = QwenLLM()
+            self.embedding_function = QwenTongyiEmbeddings(llm)
         self.db = None
 
     def _metadata_func(self, record: dict, metadata: dict) -> dict:
@@ -102,6 +146,7 @@ class KnowledgeBaseManager:
         """
         从目录加载JSON文档，使用jq语法和自定义元数据函数高效解析。
         """
+        # 1. 加载JSON文档（原有逻辑）
         json_loader_kwargs = {
             # 采纳并增强了建议的jq表达式：
             # 1. 'if type == "object"' 检查每个元素的类型。
@@ -131,23 +176,43 @@ class KnowledgeBaseManager:
             documents = loader.load()
         except ValueError as e:
             print(f"JSON文件解析失败，请检查文件格式: {e}")
-            return []
-
-        # 过滤掉那些没有成功提取出文本的文档
+            documents = []
         documents = [doc for doc in documents if doc.page_content]
 
+        # 2. 加载data/reports目录下的TXT文档（新增逻辑）
+        txt_documents = []
+        reports_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'reports')
+        for root, _, files in os.walk(reports_dir):
+            for file in files:
+                if file.lower().endswith('.txt'):
+                    file_path = os.path.join(root, file)
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                        if content.strip():
+                            txt_documents.append(
+                                Document(
+                                    page_content=content,
+                                    metadata={"source": file_path}
+                                )
+                            )
+                    except Exception as e:
+                        print(f"读取TXT文件失败: {file_path}, 错误: {e}")
+
+        # 合并所有文档
+        all_documents = documents + txt_documents
+
         # 防御性校验，确保所有page_content都是字符串
-        for doc in documents:
+        for doc in all_documents:
             if not isinstance(doc.page_content, str):
                 print(f"警告: 在文件 {doc.metadata.get('source')} 中发现非文本内容，已强制转换为字符串。")
                 doc.page_content = str(doc.page_content)
 
-        if not documents:
-            print(f"警告: 在目录 '{self.processed_dir}' 中没有成功加载任何文档。")
+        if not all_documents:
+            print(f"警告: 在目录 '{self.processed_dir}' 和 'data/reports' 中没有成功加载任何文档。")
             return []
-        
-        print(f"成功加载并处理了 {len(documents)} 个文档块。")
-        return documents
+        print(f"成功加载并处理了 {len(all_documents)} 个文档块（含JSON和TXT）。")
+        return all_documents
 
     def split_documents(self, documents, chunk_size=500, chunk_overlap=50):
         """将文档分割成小块。"""
@@ -201,26 +266,32 @@ def main():
     
     # 确保文件夹存在
     os.makedirs(PROCESSED_REPORTS_DIR, exist_ok=True)
-    os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
+    from config import VECTOR_STORE_DIR, VECTOR_STORE_SUBDIR
+    target_vector_store = os.path.join(VECTOR_STORE_DIR, VECTOR_STORE_SUBDIR)
+    os.makedirs(target_vector_store, exist_ok=True)
+    print(f"即将初始化新的向量数据库，目标目录: {target_vector_store}")
 
-    # 实例化管理器
+    # 实例化管理器（会自动指向当前子目录）
     kb_manager = KnowledgeBaseManager()
 
     # 加载和处理文档
     documents = kb_manager.load_documents()
+    print(f"加载文档数: {len(documents)}")
     if not documents:
         print("在 'data/processed' 目录下没有找到JSON文件。")
         print("请确保 'pdf_parser.py' 已经成功运行并且生成了JSON文件。")
         return
 
     docs = kb_manager.split_documents(documents)
+    print(f"分块后文档数: {len(docs)}")
 
-    # 创建或加载数据库
+    # 创建并持久化新的数据库
     db = kb_manager.create_and_persist_db(docs)
+    print(f"新的向量数据库已初始化并持久化到: {target_vector_store}")
 
     # 执行一个测试查询
     print("\n--- 执行测试查询 ---")
-    query = "中芯国际的2024年第一季度营收是多少？"
+    query = "城建档案敏感词怎么分类"
     search_results = kb_manager.similarity_search(query)
     print(f"查询: '{query}'")
     print("查询结果:")

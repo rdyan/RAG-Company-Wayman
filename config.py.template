@@ -49,6 +49,25 @@ RERANK_MODEL_NAME = 'gte-rerank-v2'
 # 'qwen-plus' 是效果最好的版本, 'qwen-turbo' 是速度最快的版本
 GENERATION_MODEL_NAME = 'qwen-plus'
 
+# LLM推理模式: "api" 或 "local"
+LLM_MODE = "api"  # 或 "local"
+# Qwen3-32B模型变体: "FP16" (全精度) 或 "AWQ" (4bit量化)
+QWEN_MODEL_VARIANT = "FP16"  # 可选: "FP16" 或 "AWQ"
+# 本地大模型权重路径（会根据QWEN_MODEL_VARIANT自动选择）
+if QWEN_MODEL_VARIANT == "AWQ":
+    LOCAL_MODEL_PATH = "models/Qwen/Qwen3-32B-AWQ"
+else:
+    LOCAL_MODEL_PATH = "models/Qwen/Qwen3-32B"
+
+# 嵌入模型配置
+EMBEDDING_MODE = "local"  # "local" 或 "api"
+LOCAL_EMBEDDING_PATH = "./models/Qwen3-Embedding-0.6B"
+
+# 向量库主目录
+VECTOR_STORE_DIR = "data/vector_store"
+# 当前embedding子目录（如qwen3_1024、openai_1536等）
+VECTOR_STORE_SUBDIR = "qwen3_1024"
+
 
 # --- Prompt模板配置 ---
 # 默认的简单模板
