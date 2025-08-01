@@ -128,6 +128,9 @@ async def audit_files(request: AuditRequest):
                 "result": [{"error": "内容为空或读取失败"}]
             })
         else:
+            # 保证seg_results为数组
+            if not isinstance(seg_results, list):
+                seg_results = [seg_results]
             results.append({
                 "file_name": fn,
                 "raw_content": c[:200],

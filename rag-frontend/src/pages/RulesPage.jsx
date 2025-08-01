@@ -169,7 +169,7 @@ function RulesPage() {
         onCancel={() => { setViewFile(''); setViewContent(''); setViewError('') }}
         footer={null}
         width={800}
-        bodyStyle={{ maxHeight: 500, overflowY: 'auto', background: '#fafafa' }}
+        styles={{ body: { maxHeight: 500, overflowY: 'auto', background: '#fafafa' } }}
       >
         {viewing && !viewContent && !viewError && <Spin tip="加载中..." />}
         {viewError && <Alert message={viewError} type="error" showIcon />}

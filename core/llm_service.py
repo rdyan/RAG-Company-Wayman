@@ -21,13 +21,15 @@ from http import HTTPStatus
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 from config import DASHSCOPE_API_KEY, RERANK_MODEL_NAME, EMBEDDING_MODEL_NAME, API_MODEL_NAME, LLM_MODE
 from config import LOCAL_MODEL_PATH
+# 新增vllm配置
+from config import VLLM_BASE_URL, VLLM_MODEL_NAME, VLLM_API_KEY
 
 os.environ['MODELSCOPE_CACHE']='.'
 
 class QwenLLM:
     def __init__(self):
         """
-        初始化QwenLLM服务，仅支持API和本地modelscope两种模式。
+        初始化QwenLLM服务，支持API、本地、vLLM三种模式。
         """
         if LLM_MODE == "api":
             if DASHSCOPE_API_KEY:
@@ -35,6 +37,7 @@ class QwenLLM:
             else:
                 raise ValueError("通义千问API Key未设置, 请在config.py中配置")
             self.api_mode = True
+            self.vllm_mode = False
         elif LLM_MODE == "local":
             self.tokenizer = AutoTokenizer.from_pretrained(
                 LOCAL_MODEL_PATH)
@@ -45,6 +48,15 @@ class QwenLLM:
                 torch_dtype=torch.float16    # 推荐：节省显存
             ).eval()
             self.api_mode = False
+            self.vllm_mode = False
+        elif LLM_MODE == "vllm":
+            from openai import OpenAI
+            self.vllm_client = OpenAI(
+                base_url=VLLM_BASE_URL,
+                api_key=VLLM_API_KEY
+            )
+            self.api_mode = False
+            self.vllm_mode = True
         else:
             raise ValueError("Unsupported LLM_MODE")
 
@@ -155,6 +167,20 @@ class QwenLLM:
                     return ""
             except Exception as e:
                 print(f"调用Generation API时发生异常: {e}")
+                return ""
+        elif hasattr(self, 'vllm_mode') and self.vllm_mode:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ]
+            try:
+                response = self.vllm_client.chat.completions.create(
+                    model=VLLM_MODEL_NAME,
+                    messages=messages
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                print(f"调用vLLM服务时发生异常: {e}")
                 return ""
         else:
             inputs = self.tokenizer(prompt, return_tensors="pt").to("cuda")

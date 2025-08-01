@@ -174,11 +174,14 @@ function AuditPage() {
         onCancel={() => setViewFile(null)}
         footer={null}
         width={800}
-        bodyStyle={{ maxHeight: 500, overflowY: 'auto', background: '#fafafa' }}
+        styles={{ body: { maxHeight: 500, overflowY: 'auto', background: '#fafafa' } }}
       >
         {viewFile && resultMap[viewFile] && (
-          <Collapse defaultActiveKey={resultMap[viewFile].map((_, i) => i.toString())}>
-            {resultMap[viewFile].map((seg, idx) => (
+          <Collapse defaultActiveKey={(() => {
+            const arr = Array.isArray(resultMap[viewFile]) ? resultMap[viewFile] : [resultMap[viewFile]];
+            return arr.map((_, i) => i.toString());
+          })()}>
+            {(Array.isArray(resultMap[viewFile]) ? resultMap[viewFile] : [resultMap[viewFile]]).map((seg, idx) => (
               <Collapse.Panel header={`分段${idx+1}`} key={idx}>
                 {seg.error ? (
                   <Alert message={seg.error} type="error" showIcon />
